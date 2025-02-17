@@ -1,9 +1,9 @@
-# Vanity Eth Address
-Vanity Eth Address is a tool to generate Ethereum addresses that match certain criteria, accelerated with NVIDIA CUDA-enabled GPUs.
+# Vanity TRON Address
+Vanity TRON Address is a tool to generate TRON addresses that match certain criteria, accelerated with NVIDIA CUDA-enabled GPUs.
 
 ## Usage
 ```
-./vanity-eth-addresss [PARAMETERS]
+./vanity-tron-address [PARAMETERS]
     Scoring methods
       (-lz) --leading-zeros               Count zero bytes at the start of the address
        (-z) --zeros                       Count zero bytes anywhere in the address
@@ -19,8 +19,8 @@ Vanity Eth Address is a tool to generate Ethereum addresses that match certain c
        (-w) --work-scale <num>            Defaults to 15. Scales the work done in each kernel. If your GPU finishes kernels within a few seconds, you may benefit from increasing this number.
 
 Examples:
-    ./vanity-eth-address --zeros --device 0 --device 2 --work-scale 17
-    ./vanity-eth-address --leading-zeros --contract2 --bytecode bytecode.txt --address 0x0000000000000000000000000000000000000000 --device 0
+    ./vanity-tron-address --zeros --device 0 --device 2 --work-scale 17
+    ./vanity-tron-address --leading-zeros --contract2 --bytecode bytecode.txt --address 0x0000000000000000000000000000000000000000 --device 0
 ```
 
 ## Benchmarks

@@ -748,12 +748,8 @@ int main(int argc, char *argv[]) {
                             } else if (mode == 1) {
                                 CurvePoint p = cpu_point_multiply(G, m.results[i]);
                                 addresses[i] = cpu_calculate_contract_address(cpu_calculate_address(p.x, p.y));
-                            } else if (mode == 2) {
+                            } else if (mode == 2 || mode == 3) {
                                 addresses[i] = cpu_calculate_contract_address2(origin_address, m.results[i], bytecode_hash);
-                            } else if (mode == 3) {
-                                _uint256 salt = cpu_calculate_create3_salt(origin_address, m.results[i]);
-                                Address proxy = cpu_calculate_contract_address2(deployer_address, salt, bytecode_hash);
-                                addresses[i] = cpu_calculate_contract_address(proxy, 1);
                             }
                         }
 

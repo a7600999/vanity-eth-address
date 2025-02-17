@@ -148,7 +148,15 @@ __device__ Address calculate_address(_uint256 x, _uint256 y) {
     uint64_t c = swap_endianness(block[10]);
     uint64_t d = swap_endianness(block[15]);
 
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+    // TRON address generation logic
+    uint8_t tron_prefix = 0x41;
+    uint32_t tron_a = (tron_prefix << 24) | ((b >> 8) & 0xFFFFFF);
+    uint32_t tron_b = ((b & 0xFF) << 24) | ((c >> 40) & 0xFFFFFF);
+    uint32_t tron_c = ((c >> 8) & 0xFFFFFFFF);
+    uint32_t tron_d = ((c & 0xFF) << 24) | ((d >> 40) & 0xFFFFFF);
+    uint32_t tron_e = ((d >> 8) & 0xFFFFFFFF);
+
+    return {tron_a, tron_b, tron_c, tron_d, tron_e};
 }
 
 
@@ -170,7 +178,15 @@ __device__ Address calculate_contract_address(Address a, uint8_t nonce = 0x80) {
     uint64_t c = swap_endianness(block[10]);
     uint64_t d = swap_endianness(block[15]);
 
-    return {(uint32_t)(b & 0xFFFFFFFF), (uint32_t)(c >> 32), (uint32_t)(c & 0xFFFFFFFF), (uint32_t)(d >> 32), (uint32_t)(d & 0xFFFFFFFF)};
+    // TRON contract address generation logic
+    uint8_t tron_prefix = 0x41;
+    uint32_t tron_a = (tron_prefix << 24) | ((b >> 8) & 0xFFFFFF);
+    uint32_t tron_b = ((b & 0xFF) << 24) | ((c >> 40) & 0xFFFFFF);
+    uint32_t tron_c = ((c >> 8) & 0xFFFFFFFF);
+    uint32_t tron_d = ((c & 0xFF) << 24) | ((d >> 40) & 0xFFFFFF);
+    uint32_t tron_e = ((d >> 8) & 0xFFFFFFFF);
+
+    return {tron_a, tron_b, tron_c, tron_d, tron_e};
 }
 
 
