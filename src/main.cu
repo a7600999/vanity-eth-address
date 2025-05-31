@@ -36,7 +36,7 @@
 #include "cpu_curve_math.h"
 #include "cpu_keccak.h"
 #include "cpu_math.h"
-
+#include "tron_utils.h"
 
 #define OUTPUT_BUFFER_SIZE 10000
 
@@ -177,7 +177,7 @@ uint64_t milliseconds() {
 }
 
 
-void host_thread(int device, int device_index, int score_method, int mode, Address origin_address, Address deployer_address, _uint256 bytecode) {
+void host_thread(int device, int device_index, int score_method, int mode, bool tron_mode, Address origin_address, Address deployer_address, _uint256 bytecode) {
     uint64_t GRID_WORK = ((uint64_t)BLOCK_SIZE * (uint64_t)GRID_SIZE * (uint64_t)THREAD_WORK);
 
     CurvePoint* block_offsets = 0;
@@ -530,6 +530,7 @@ void print_speeds(int num_devices, int* device_ids, double* speeds) {
 int main(int argc, char *argv[]) {
     int score_method = -1; // 0 = leading zeroes, 1 = zeros
     int mode = 0; // 0 = address, 1 = contract, 2 = create2 contract, 3 = create3 proxy contract
+    bool tron_mode = false;
     char* input_file = 0;
     char* input_address = 0;
     char* input_deployer_address = 0;
@@ -568,6 +569,9 @@ int main(int argc, char *argv[]) {
         } else if  (strcmp(argv[i], "--work-scale") == 0 || strcmp(argv[i], "-w") == 0) {
             GRID_SIZE = 1U << atoi(argv[i + 1]);
             i += 2;
+        } else if (strcmp(argv[i], "--tron") == 0 || strcmp(argv[i], "-t") == 0) {
+            tron_mode = true;
+            i++;
         } else {
             i++;
         }
@@ -718,7 +722,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::thread> threads;
     uint64_t global_start_time = milliseconds();
     for (int i = 0; i < num_devices; i++) {
-        std::thread th(host_thread, device_ids[i], i, score_method, mode, origin_address, deployer_address, bytecode_hash);
+        std::thread th(host_thread, device_ids[i], i, score_method, mode, tron_mode, origin_address, deployer_address, bytecode_hash);
         threads.push_back(move(th));
     }
 
@@ -763,10 +767,27 @@ int main(int argc, char *argv[]) {
                             Address a = addresses[i];
                             uint64_t time = (m.time - global_start_time) / 1000;
 
-                            if (mode == 0 || mode == 1) {
-                                printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%08x%08x%08x%08x%08x\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, a.a, a.b, a.c, a.d, a.e);
-                            } else if (mode == 2 || mode == 3) {
-                                printf("Elapsed: %06u Score: %02u Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%08x%08x%08x%08x%08x\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, a.a, a.b, a.c, a.d, a.e);
+                            std::string display_address_str;
+                            char original_address_hex[41]; // 20 bytes * 2 chars/byte + 1 null terminator
+
+                            if (tron_mode) { // tron_mode is available in main's scope
+                                display_address_str = cpu_to_tron_base58check(a);
+                            } else {
+                                snprintf(original_address_hex, sizeof(original_address_hex), "%08x%08x%08x%08x%08x", a.a, a.b, a.c, a.d, a.e);
+                            }
+
+                            if (mode == 0 || mode == 1) { // Modes that output "Private Key"
+                                if (tron_mode) {
+                                    printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: %s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, display_address_str.c_str());
+                                } else {
+                                    printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, original_address_hex);
+                                }
+                            } else if (mode == 2 || mode == 3) { // Modes that output "Salt"
+                                if (tron_mode) {
+                                    printf("Elapsed: %06u Score: %02u Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: %s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, display_address_str.c_str());
+                                } else {
+                                    printf("Elapsed: %06u Score: %02u Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, original_address_hex);
+                                }
                             }
                         }
 

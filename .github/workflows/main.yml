@@ -27,7 +27,7 @@ jobs:
       - name: "Build"
         shell: powershell
         run: |
-          nvcc src/main.cu -o x86_64_windows.exe -O3 -Xptxas -v -lbcrypt -gencode arch=compute_52,code=compute_52
+          nvcc src/main.cu src/cpu_sha256.cpp src/cpu_base58.cpp src/cpu_tron_utils.cpp -o x86_64_windows.exe -O3 -Xptxas -v -lbcrypt -gencode arch=compute_52,code=compute_52
 
       - uses: ncipollo/release-action@v1
         with:
@@ -49,7 +49,7 @@ jobs:
 
     - name: "Build"
       run: |
-        nvcc src/main.cu -o x86_64_linux.bin -O3 -Xptxas -v -Xcompiler -static-libgcc -Xcompiler -static-libstdc++ -gencode arch=compute_52,code=compute_52
+        nvcc src/main.cu src/cpu_sha256.cpp src/cpu_base58.cpp src/cpu_tron_utils.cpp -o x86_64_linux.bin -O3 -Xptxas -v -Xcompiler -static-libgcc -Xcompiler -static-libstdc++ -gencode arch=compute_52,code=compute_52
 
     - uses: ncipollo/release-action@v1
       with:
