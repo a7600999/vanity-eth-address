@@ -1,4 +1,3 @@
 #pragma once
 #include "cpu_base58.h"
-
-// For potential future GPU versions or unified interface
+#include "gpu_base58.h" // Include the GPU version

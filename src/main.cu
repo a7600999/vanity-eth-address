@@ -767,25 +767,55 @@ int main(int argc, char *argv[]) {
                             Address a = addresses[i];
                             uint64_t time = (m.time - global_start_time) / 1000;
 
-                            std::string display_address_str;
-                            char original_address_hex[41]; // 20 bytes * 2 chars/byte + 1 null terminator
+                        if (tron_mode) {
+                            std::vector<Address> address_batch_vector;
+                            address_batch_vector.reserve(m.results_count);
+                            for (int i = 0; i < m.results_count; i++) {
+                                address_batch_vector.push_back(addresses[i]);
+                            }
+                            std::vector<std::string> tron_display_strings = batch_addresses_to_tron_gpu(address_batch_vector);
 
-                            if (tron_mode) { // tron_mode is available in main's scope
-                                display_address_str = cpu_to_tron_base58check(a);
-                            } else {
-                                snprintf(original_address_hex, sizeof(original_address_hex), "%08x%08x%08x%08x%08x", a.a, a.b, a.c, a.d, a.e);
+                            bool gpu_conversion_ok = tron_display_strings.size() == static_cast<size_t>(m.results_count);
+                            if (!gpu_conversion_ok) {
+                                fprintf(stderr, "\nError: GPU TRON address conversion failed or returned incorrect count (expected %d, got %zu). Check CUDA errors if any. Printing may be affected.\n", m.results_count, tron_display_strings.size());
+                                // As a simple fallback, could clear tron_display_strings to force error string on each,
+                                // or implement full CPU fallback if critical. For now, just warn.
                             }
 
-                            if (mode == 0 || mode == 1) { // Modes that output "Private Key"
-                                if (tron_mode) {
-                                    printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: %s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, display_address_str.c_str());
-                                } else {
-                                    printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, original_address_hex);
+                            for (int i = 0; i < m.results_count; i++) {
+                                _uint256 k = m.results[i];
+                                int score = m.scores[i];
+                                Address a = addresses[i]; // Still useful for context or if we had a CPU fallback
+                                uint64_t time = (m.time - global_start_time) / 1000;
+                                std::string display_address_str = "ERROR_GPU_CONV"; // Default error string
+
+                                if (gpu_conversion_ok && i < tron_display_strings.size()) {
+                                   display_address_str = tron_display_strings[i];
+                                } else if (!gpu_conversion_ok) {
+                                    // If conversion failed generally, could use CPU fallback for this specific address
+                                    // display_address_str = cpu_to_tron_base58check(a);
+                                    // For now, stick to ERROR_GPU_CONV if batch failed.
                                 }
-                            } else if (mode == 2 || mode == 3) { // Modes that output "Salt"
-                                if (tron_mode) {
+
+
+                                if (mode == 0 || mode == 1) { // Modes that output "Private Key"
+                                    printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: %s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, display_address_str.c_str());
+                                } else if (mode == 2 || mode == 3) { // Modes that output "Salt"
                                     printf("Elapsed: %06u Score: %02u Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: %s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, display_address_str.c_str());
-                                } else {
+                                }
+                            }
+                        } else { // Not tron_mode, use original hex printing
+                            for (int i = 0; i < m.results_count; i++) {
+                                _uint256 k = m.results[i];
+                                int score = m.scores[i];
+                                Address a = addresses[i];
+                                uint64_t time = (m.time - global_start_time) / 1000;
+                                char original_address_hex[41];
+                                snprintf(original_address_hex, sizeof(original_address_hex), "%08x%08x%08x%08x%08x", a.a, a.b, a.c, a.d, a.e);
+
+                                if (mode == 0 || mode == 1) { // Modes that output "Private Key"
+                                    printf("Elapsed: %06u Score: %02u Private Key: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, original_address_hex);
+                                } else if (mode == 2 || mode == 3) { // Modes that output "Salt"
                                     printf("Elapsed: %06u Score: %02u Salt: 0x%08x%08x%08x%08x%08x%08x%08x%08x Address: 0x%s\n", (uint32_t)time, score, k.a, k.b, k.c, k.d, k.e, k.f, k.g, k.h, original_address_hex);
                                 }
                             }
